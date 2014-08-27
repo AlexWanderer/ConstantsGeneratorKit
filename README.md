@@ -12,7 +12,7 @@ All you need is the ConstantsGeneratorKit.cs script placed in an Editor folder i
 License
 ---
 
-ConstantsGeneratorKit is just a modified and updated version of [Devin Reimer's](https://twitter.com/DevinReimer) TagsLayersScenesBuilder available on his blog [here](http://blog.almostlogical.com/resources/TagsLayersScenesBuilder.cs). Below is the license directly copy/pasted from the original TagsLayersScenesBuilder file:
+ConstantsGeneratorKit is just a modified, updated and expanded version of [Devin Reimer's](https://twitter.com/DevinReimer) TagsLayersScenesBuilder available on his blog [here](http://blog.almostlogical.com/resources/TagsLayersScenesBuilder.cs). Below is the license directly copy/pasted from the original TagsLayersScenesBuilder file:
 
 
 >Tags, Layers and Scene Builder - Auto Generate Tags, Layers and Scenes classes containing consts for all variables for code completion - 2012-10-01  
