@@ -15,12 +15,12 @@ License
 ConstantsGeneratorKit is just a modified and updated version of [Devin Reimer's](https://twitter.com/DevinReimer) TagsLayersScenesBuilder available on his blog [here](http://blog.almostlogical.com/resources/TagsLayersScenesBuilder.cs). Below is the license directly copy/pasted from the original TagsLayersScenesBuilder file:
 
 
->// Tags, Layers and Scene Builder - Auto Generate Tags, Layers and Scenes classes containing consts for all variables for code completion - 2012-10-01
->// released under MIT License
->// http://www.opensource.org/licenses/mit-license.php
->//
->//@author		Devin Reimer - AlmostLogical Software / Owlchemy Labs
->//@website 		http://blog.almostlogical.com, http://owlchemylabs.com
+>Tags, Layers and Scene Builder - Auto Generate Tags, Layers and Scenes classes containing consts for all variables for code completion - 2012-10-01  
+>released under MIT License  
+>http://www.opensource.org/licenses/mit-license.php  
+>  
+>@author		Devin Reimer - AlmostLogical Software / Owlchemy Labs  
+>@website 		http://blog.almostlogical.com, http://owlchemylabs.com  
 
 
 >Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
