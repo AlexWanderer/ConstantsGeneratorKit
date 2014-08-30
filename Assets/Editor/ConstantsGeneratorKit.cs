@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +9,7 @@ using System.Linq;
 
 namespace Prime31.Editor
 {
-	//Note: This class uses UnityEditorInternal which is an undocumented internal feature
+	// Note: This class uses UnityEditorInternal which is an undocumented internal feature
 	public class ConstantsGeneratorKit : MonoBehaviour
 	{
 		private const string FOLDER_LOCATION = "scripts/auto-generated/";
@@ -22,27 +23,39 @@ namespace Prime31.Editor
 
 
 		[MenuItem( "Edit/Generate Constants Classes..." )]
-	    static void RebuildTagsAndLayersClasses()
+	    static void rebuildConstantsClassesMenuItem()
 	    {
-	        var folderPath = Application.dataPath + "/" + FOLDER_LOCATION;
-	        if( !Directory.Exists(folderPath ) )
-	            Directory.CreateDirectory( folderPath );
-
-			File.WriteAllText( folderPath + TAGS_FILE_NAME, getClassContent( TAGS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.tags ) );
-			File.WriteAllText( folderPath + LAYERS_FILE_NAME, getLayerClassContent( LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.layers ) );
-			File.WriteAllText( folderPath + SCENES_FILE_NAME, getClassContent( SCENES_FILE_NAME.Replace( ".cs", string.Empty ), editorBuildSettingsScenesToNameStrings( EditorBuildSettings.scenes ) ) );
-			File.WriteAllText( folderPath + RESOURCE_PATHS_FILE_NAME, getResourcePathsContent( RESOURCE_PATHS_FILE_NAME.Replace( ".cs", string.Empty ) ) );
-
-	        AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + TAGS_FILE_NAME, ImportAssetOptions.ForceUpdate );
-	        AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + LAYERS_FILE_NAME, ImportAssetOptions.ForceUpdate );
-	  		AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + SCENES_FILE_NAME, ImportAssetOptions.ForceUpdate );
-			AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + RESOURCE_PATHS_FILE_NAME, ImportAssetOptions.ForceUpdate );
-
-			Debug.Log( "ConstantsGeneratorKit complete. Constants classes built to " + FOLDER_LOCATION );
+	        rebuildConstantsClasses();
 	    }
 
 
-	    private static string[] editorBuildSettingsScenesToNameStrings( EditorBuildSettingsScene[] scenes )
+		public static void rebuildConstantsClasses( bool buildResourcesAndScenes = true )
+		{
+			var folderPath = Application.dataPath + "/" + FOLDER_LOCATION;
+			if( !Directory.Exists(folderPath ) )
+				Directory.CreateDirectory( folderPath );
+
+			File.WriteAllText( folderPath + TAGS_FILE_NAME, getClassContent( TAGS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.tags ) );
+			File.WriteAllText( folderPath + LAYERS_FILE_NAME, getLayerClassContent( LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.layers ) );
+
+			AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + TAGS_FILE_NAME, ImportAssetOptions.ForceUpdate );
+			AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + LAYERS_FILE_NAME, ImportAssetOptions.ForceUpdate );
+
+			// handle resources and scenes only when asked
+			if( buildResourcesAndScenes )
+			{
+				File.WriteAllText( folderPath + SCENES_FILE_NAME, getClassContent( SCENES_FILE_NAME.Replace( ".cs", string.Empty ), editorBuildSettingsScenesToNameStrings( EditorBuildSettings.scenes ) ) );
+				File.WriteAllText( folderPath + RESOURCE_PATHS_FILE_NAME, getResourcePathsContent( RESOURCE_PATHS_FILE_NAME.Replace( ".cs", string.Empty ) ) );
+
+				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + SCENES_FILE_NAME, ImportAssetOptions.ForceUpdate );
+				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + RESOURCE_PATHS_FILE_NAME, ImportAssetOptions.ForceUpdate );
+			}
+
+			Debug.Log( "ConstantsGeneratorKit complete. Constants classes built to " + FOLDER_LOCATION );
+		}
+
+
+		private static string[] editorBuildSettingsScenesToNameStrings( EditorBuildSettingsScene[] scenes )
 	    {
 	        var sceneNames = new string[scenes.Length];
 	        for( var n = 0; n < sceneNames.Length; n++ )
@@ -219,5 +232,27 @@ namespace Prime31.Editor
 
 	        return output.ToUpper();
 	    }
+	}
+
+
+	// this post processor listens for changes to the TagManager and automatically rebuilds all classes if it sees a change
+	public class ConstandsGeneratorPostProcessor : AssetPostprocessor
+	{
+		// for some reason, OnPostprocessAllAssets often gets called multiple times in a row. This helps guard against rebuilding classes
+		// when not necessary.
+		static DateTime? _lastBuildTime;
+
+
+		static void OnPostprocessAllAssets( string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths )
+		{
+			if( importedAssets.Contains( "ProjectSettings/TagManager.asset" ) )
+			{
+				if( !_lastBuildTime.HasValue || _lastBuildTime.Value.AddSeconds( 5 ) < DateTime.Now )
+				{
+					_lastBuildTime = DateTime.Now;
+					ConstantsGeneratorKit.rebuildConstantsClasses( false );
+				}
+			}
+		}
 	}
 }
