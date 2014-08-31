@@ -3,6 +3,7 @@ using UnityEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
 
@@ -29,29 +30,36 @@ namespace Prime31.Editor
 	    }
 
 
-		public static void rebuildConstantsClasses( bool buildResourcesAndScenes = true )
+		public static void rebuildConstantsClasses( bool buildResources = true, bool buildScenes = true, bool buildTagsAndLayers = true )
 		{
 			var folderPath = Application.dataPath + "/" + FOLDER_LOCATION;
 			if( !Directory.Exists(folderPath ) )
 				Directory.CreateDirectory( folderPath );
 
-			File.WriteAllText( folderPath + TAGS_FILE_NAME, getClassContent( TAGS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.tags ) );
-			File.WriteAllText( folderPath + LAYERS_FILE_NAME, getLayerClassContent( LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.layers ) );
+			if( buildTagsAndLayers )
+			{
+				File.WriteAllText( folderPath + TAGS_FILE_NAME, getClassContent( TAGS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.tags ) );
+				File.WriteAllText( folderPath + LAYERS_FILE_NAME, getLayerClassContent( LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.layers ) );
 
-			AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + TAGS_FILE_NAME, ImportAssetOptions.ForceUpdate );
-			AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + LAYERS_FILE_NAME, ImportAssetOptions.ForceUpdate );
+				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + TAGS_FILE_NAME, ImportAssetOptions.ForceUpdate );
+				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + LAYERS_FILE_NAME, ImportAssetOptions.ForceUpdate );
+			}
 
 			// handle resources and scenes only when asked
-			if( buildResourcesAndScenes )
+			if( buildScenes )
 			{
 				File.WriteAllText( folderPath + SCENES_FILE_NAME, getClassContent( SCENES_FILE_NAME.Replace( ".cs", string.Empty ), editorBuildSettingsScenesToNameStrings( EditorBuildSettings.scenes ) ) );
-				File.WriteAllText( folderPath + RESOURCE_PATHS_FILE_NAME, getResourcePathsContent( RESOURCE_PATHS_FILE_NAME.Replace( ".cs", string.Empty ) ) );
-
 				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + SCENES_FILE_NAME, ImportAssetOptions.ForceUpdate );
+			}
+
+			if( buildResources )
+			{
+				File.WriteAllText( folderPath + RESOURCE_PATHS_FILE_NAME, getResourcePathsContent( RESOURCE_PATHS_FILE_NAME.Replace( ".cs", string.Empty ) ) );
 				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + RESOURCE_PATHS_FILE_NAME, ImportAssetOptions.ForceUpdate );
 			}
 
-			Debug.Log( "ConstantsGeneratorKit complete. Constants classes built to " + FOLDER_LOCATION );
+			if( buildResources && buildScenes && buildTagsAndLayers )
+				Debug.Log( "ConstantsGeneratorKit complete. Constants classes built to " + FOLDER_LOCATION );
 		}
 
 
@@ -240,17 +248,41 @@ namespace Prime31.Editor
 	{
 		// for some reason, OnPostprocessAllAssets often gets called multiple times in a row. This helps guard against rebuilding classes
 		// when not necessary.
-		static DateTime? _lastBuildTime;
+		static DateTime? _lastTagsAndLayersBuildTime;
+		static DateTime? _lastScenesBuildTime;
 
 
 		static void OnPostprocessAllAssets( string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths )
 		{
+			var resourcesDidChange = importedAssets.Any( s => Regex.IsMatch( s, @"/Resources/.*", System.Text.RegularExpressions.RegexOptions.IgnoreCase ) );
+
+			if( !resourcesDidChange )
+				resourcesDidChange = movedAssets.Any( s => Regex.IsMatch( s, @"/Resources/.*", System.Text.RegularExpressions.RegexOptions.IgnoreCase ) );
+
+			if( !resourcesDidChange )
+				resourcesDidChange = deletedAssets.Any( s => Regex.IsMatch( s, @"/Resources/.*", System.Text.RegularExpressions.RegexOptions.IgnoreCase ) );
+
+			if( resourcesDidChange )
+				ConstantsGeneratorKit.rebuildConstantsClasses( true, false, false );
+
+
+			// layers and tags changes
 			if( importedAssets.Contains( "ProjectSettings/TagManager.asset" ) )
 			{
-				if( !_lastBuildTime.HasValue || _lastBuildTime.Value.AddSeconds( 5 ) < DateTime.Now )
+				if( !_lastTagsAndLayersBuildTime.HasValue || _lastTagsAndLayersBuildTime.Value.AddSeconds( 5 ) < DateTime.Now )
 				{
-					_lastBuildTime = DateTime.Now;
-					ConstantsGeneratorKit.rebuildConstantsClasses( false );
+					_lastTagsAndLayersBuildTime = DateTime.Now;
+					ConstantsGeneratorKit.rebuildConstantsClasses( false, false );
+				}
+			}
+
+			// scene changes
+			if( importedAssets.Contains( "ProjectSettings/EditorBuildSettings.asset" ) )
+			{
+				if( !_lastScenesBuildTime.HasValue || _lastScenesBuildTime.Value.AddSeconds( 5 ) < DateTime.Now )
+				{
+					_lastScenesBuildTime = DateTime.Now;
+					ConstantsGeneratorKit.rebuildConstantsClasses( false, true );
 				}
 			}
 		}
