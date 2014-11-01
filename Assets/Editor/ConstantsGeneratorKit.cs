@@ -83,7 +83,19 @@ namespace Prime31.Editor
 			output += "\t{\n";
 
 	        foreach( var label in labelsArray )
-				output += "\t\t"+ buildConstVariable( label ) + "\n";
+				output += "\t\t" + buildConstVariable( label ) + "\n";
+
+			if( className == SCENES_FILE_NAME.Replace( ".cs", string.Empty ) )
+			{
+				output += "\n\t\tpublic const int TOTAL_SCENES = " + labelsArray.Length + ";\n\n\n";
+
+				output += "\t\tpublic static int nextSceneIndex()\n";
+				output += "\t\t{\n";
+				output += "\t\t\tif( UnityEngine.Application.loadedLevel + 1 == TOTAL_SCENES )\n";
+				output += "\t\t\t\treturn 0;\n";
+				output += "\t\t\treturn UnityEngine.Application.loadedLevel + 1;\n";
+				output += "\t\t}\n";
+			}
 
 			output += "\t}\n";
 			output += "}";
