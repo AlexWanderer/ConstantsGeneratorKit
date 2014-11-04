@@ -238,19 +238,12 @@ namespace Prime31.Editor
 
 	    private static string toUpperCaseWithUnderscores( string input )
 	    {
-	    	input = input.Replace( "-", "_" );
-	        var output = "" + input[0];
+	    	input = input.Replace( "-", "_" ).Replace( " ", "_" );
 
-	        for( var n = 1; n < input.Length; n++ )
-	        {
-	            if( ( char.IsUpper( input[n] ) || input[n] == ' ' ) && !char.IsUpper( input[n - 1] ) && input[n - 1] != '_' && input[n - 1] != ' ' )
-	                output += "_";
-
-	            if( input[n] != ' ' && input[n] != '_' )
-	                output += input[n];
-	        }
-
-	        return output.ToUpper();
+			// digits are a no-no so stick a "k" in front
+			if( Char.IsDigit( input[0] ) )
+				return "k" + input.ToUpper();
+			return input.ToUpper();
 	    }
 	}
 
