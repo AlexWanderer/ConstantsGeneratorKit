@@ -240,6 +240,15 @@ namespace Prime31.Editor
 	    {
 	    	input = input.Replace( "-", "_" ).Replace( " ", "_" );
 
+	    	// make camel-case have an underscore between letters
+			Func<char,int,string> func = ( x, i ) =>
+			{
+				if( i > 0 && char.IsUpper( x ) && char.IsLower( input[i - 1] ) )
+					return "_" + x.ToString();
+				return x.ToString();
+			};
+			input = string.Concat( input.Select( func ).ToArray() );
+
 			// digits are a no-no so stick a "k" in front
 			if( Char.IsDigit( input[0] ) )
 				return "k" + input.ToUpper();
