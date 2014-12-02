@@ -1,7 +1,7 @@
 ConstantsGeneratorKit
 =====================
 
-This little script will generate static classes for layers, scenes, tags and resources. You will find the trigger to kick off the script in the "Edit/Generate Constants Classes". It will spit out the constants classes in the scripts/auto-generated folder by default in the "k" namespace. This allows you can use autocomplete to easily access them without having to worry about future changes, random ints and strings all over your code.
+This little script will generate static classes for layers, scenes, tags and resources. The script will rebuild the constant classes anytime it detects a change (via OnPostprocessAllAssets). Additionaly, you can manually trigger a regeneration via the "Edit/Generate Constants Classes" menu item. It will spit out the constants classes in the scripts/auto-generated folder by default in the "k" namespace. This allows you can use autocomplete to easily access them without having to worry about future changes and random ints/strings all over your code.
 
 You can configure where the classes will be written and which namespace they will be in by opening the ConstantsGeneratorKit.cs file and modifying FOLDER_LOCATION and NAMESPACE. You can also configure which Resources folders will be ignored by adding any folders to IGNORE_RESOURCES_IN_SUBFOLDERS. This is handy for dealing with 3rd party code or editor tools that you do not want to be included in your Resources classes though it is highly recommended that you remove any Resources folders that should not be in your final build to keep your build size down!
 
