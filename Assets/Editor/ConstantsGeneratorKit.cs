@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 
 namespace Prime31.Editor
@@ -17,20 +18,21 @@ namespace Prime31.Editor
 		private const string NAMESPACE = "k";
 		private static string[] IGNORE_RESOURCES_IN_SUBFOLDERS = new string[] { "ProCore", "2DToolkit" };
 
-	    private const string TAGS_FILE_NAME = "Tags.cs";
-	    private const string LAYERS_FILE_NAME = "Layers.cs";
+		private const string TAGS_FILE_NAME = "Tags.cs";
+		private const string LAYERS_FILE_NAME = "Layers.cs";
+		private const string SORTING_LAYERS_FILE_NAME = "SortingLayers.cs";
 		private const string SCENES_FILE_NAME = "Scenes.cs";
 		private const string RESOURCE_PATHS_FILE_NAME = "Resources.cs";
 
 
 		[MenuItem( "Edit/Generate Constants Classes..." )]
-	    static void rebuildConstantsClassesMenuItem()
-	    {
-	        rebuildConstantsClasses();
-	    }
+		static void rebuildConstantsClassesMenuItem()
+		{
+			rebuildConstantsClasses();
+		}
 
 
-		public static void rebuildConstantsClasses( bool buildResources = true, bool buildScenes = true, bool buildTagsAndLayers = true )
+		public static void rebuildConstantsClasses( bool buildResources = true, bool buildScenes = true, bool buildTagsAndLayers = true, bool buildSortingLayers = true )
 		{
 			var folderPath = Application.dataPath + "/" + FOLDER_LOCATION;
 			if( !Directory.Exists(folderPath ) )
@@ -44,6 +46,15 @@ namespace Prime31.Editor
 				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + TAGS_FILE_NAME, ImportAssetOptions.ForceUpdate );
 				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + LAYERS_FILE_NAME, ImportAssetOptions.ForceUpdate );
 			}
+
+			/* removing this until I have time to figure out where the sorting layers are in Unity 5
+			if( buildSortingLayers )
+			{
+				var sortingLayers = getSortingLayers();
+				var layerIds = getSortingLayerIds( sortingLayers.Length );
+				File.WriteAllText( folderPath + SORTING_LAYERS_FILE_NAME, getSortingLayerClassContent( SORTING_LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), sortingLayers, layerIds ) );
+			}
+			*/
 
 			// handle resources and scenes only when asked
 			if( buildScenes )
@@ -64,25 +75,49 @@ namespace Prime31.Editor
 
 
 		private static string[] editorBuildSettingsScenesToNameStrings( EditorBuildSettingsScene[] scenes )
-	    {
-	        var sceneNames = new string[scenes.Length];
-	        for( var n = 0; n < sceneNames.Length; n++ )
-	            sceneNames[n] = System.IO.Path.GetFileNameWithoutExtension( scenes[n].path );
+		{
+			var sceneNames = new string[scenes.Length];
+			for( var n = 0; n < sceneNames.Length; n++ )
+				sceneNames[n] = System.IO.Path.GetFileNameWithoutExtension( scenes[n].path );
 
-	        return sceneNames;
-	    }
+			return sceneNames;
+		}
 
 
-	    private static string getClassContent( string className, string[] labelsArray )
-	    {
-	        var output = "";
-	        output += "//This class is auto-generated do not modify\n";
+		private static string[] getSortingLayers()
+		{
+			var type = typeof( UnityEditorInternal.InternalEditorUtility );
+			var prop = type.GetProperty( "sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic );
+
+			return prop.GetValue( null, null ) as string[];
+		}
+
+
+		private static int[] getSortingLayerIds( int totalSortingLayers )
+		{
+			var type = typeof( UnityEditorInternal.InternalEditorUtility );
+
+			// this appears to be missing from Unity 5...
+			var method = type.GetMethod( "GetSortingLayerUserID", BindingFlags.Static | BindingFlags.NonPublic );
+
+			var layerIds = new int[totalSortingLayers];
+			for( var n = 0; n < totalSortingLayers; n++ )
+				layerIds[n] = (int)method.Invoke( null, new object[] { n } );
+
+			return layerIds;
+		}
+
+
+		private static string getClassContent( string className, string[] labelsArray )
+		{
+			var output = "";
+			output += "//This class is auto-generated do not modify\n";
 			output += "namespace " + NAMESPACE + "\n";
 			output += "{\n";
 			output += "\tpublic static class " + className + "\n";
 			output += "\t{\n";
 
-	        foreach( var label in labelsArray )
+			foreach( var label in labelsArray )
 				output += "\t\t" + buildConstVariable( label ) + "\n";
 
 			if( className == SCENES_FILE_NAME.Replace( ".cs", string.Empty ) )
@@ -100,8 +135,8 @@ namespace Prime31.Editor
 			output += "\t}\n";
 			output += "}";
 
-	        return output;
-	    }
+			return output;
+		}
 
 
 		private class Resource
@@ -122,8 +157,8 @@ namespace Prime31.Editor
 		}
 
 
-	    private static string getResourcePathsContent( string className )
-	    {
+		private static string getResourcePathsContent( string className )
+		{
 			var output = "";
 			output += "//This class is auto-generated do not modify\n";
 			output += "namespace " + NAMESPACE + "\n";
@@ -172,11 +207,11 @@ namespace Prime31.Editor
 			output += "}";
 
 			return output;
-	    }
+		}
 
 
-	    private static List<Resource> getAllResourcesAtPath( string path )
-	    {
+		private static List<Resource> getAllResourcesAtPath( string path )
+		{
 			var resources = new List<Resource>();
 
 			// handle files
@@ -184,25 +219,25 @@ namespace Prime31.Editor
 			foreach( var f in files )
 			{
 				if( f.EndsWith( ".meta" ) || f.EndsWith( ".db" ) || f.EndsWith( ".DS_Store" ) )
-				   continue;
+					continue;
 
 				resources.Add( new Resource( f ) );
 			}
 
 			return resources;
-	    }
+		}
 
 
-	    private static string getLayerClassContent( string className, string[] labelsArray )
-	    {
-	        var output = "";
-	        output += "// This class is auto-generated do not modify\n";
+		private static string getLayerClassContent( string className, string[] labelsArray )
+		{
+			var output = "";
+			output += "// This class is auto-generated do not modify\n";
 			output += "namespace " + NAMESPACE + "\n";
 			output += "{\n";
-	        output += "\tpublic static class " + className + "\n";
+			output += "\tpublic static class " + className + "\n";
 			output += "\t{\n";
 
-	        foreach( var label in labelsArray )
+			foreach( var label in labelsArray )
 				output += "\t\t" + "public const int " + toUpperCaseWithUnderscores( label ) + " = " + LayerMask.NameToLayer( label ) + ";\n";
 
 			output += "\n\n";
@@ -225,26 +260,46 @@ namespace Prime31.Editor
 			output += "\t}\n";
 			output += "}";
 
-	        return output;
-	    }
+			return output;
+		}
 
 
-	    private static string buildConstVariable( string varName, string suffix = "", string value = null )
-	    {
-	    	value = value ?? varName;
-	        return "public const string " + toUpperCaseWithUnderscores( varName ) + suffix + " = " + '"' + value + '"' + ";";
-	    }
+		private static string getSortingLayerClassContent( string className, string[] sortingLayers, int[] layerIds )
+		{
+			var output = "";
+			output += "// This class is auto-generated do not modify\n";
+			output += "namespace " + NAMESPACE + "\n";
+			output += "{\n";
+			output += "\tpublic static class " + className + "\n";
+			output += "\t{\n";
+
+			for( var i = 0; i < sortingLayers.Length; i++ )
+				output += "\t\t" + "public const int " + toUpperCaseWithUnderscores( sortingLayers[i] ) + " = " + layerIds[i] + ";\n";
+
+			output += "\n";
+			output += "\t}\n";
+			output += "}";
+
+			return output;
+		}
 
 
-	    private static string toUpperCaseWithUnderscores( string input )
-	    {
-	    	input = input.Replace( "-", "_" ).Replace( " ", "_" );
+		private static string buildConstVariable( string varName, string suffix = "", string value = null )
+		{
+			value = value ?? varName;
+			return "public const string " + toUpperCaseWithUnderscores( varName ) + suffix + " = " + '"' + value + '"' + ";";
+		}
 
-	    	// make camel-case have an underscore between letters
+
+		private static string toUpperCaseWithUnderscores( string input )
+		{
+			input = input.Replace( "-", "_" ).Replace( " ", "_" );
+
+			// make camel-case have an underscore between letters
 			Func<char,int,string> func = ( x, i ) =>
 			{
 				if( i > 0 && char.IsUpper( x ) && char.IsLower( input[i - 1] ) )
-					return "_" + x.ToString();
+				return "_" + x.ToString();
 				return x.ToString();
 			};
 			input = string.Concat( input.Select( func ).ToArray() );
@@ -253,7 +308,7 @@ namespace Prime31.Editor
 			if( Char.IsDigit( input[0] ) )
 				return "k" + input.ToUpper();
 			return input.ToUpper();
-	    }
+		}
 	}
 
 
@@ -289,6 +344,7 @@ namespace Prime31.Editor
 					ConstantsGeneratorKit.rebuildConstantsClasses( false, false );
 				}
 			}
+
 
 			// scene changes
 			if( importedAssets.Contains( "ProjectSettings/EditorBuildSettings.asset" ) )
