@@ -1,4 +1,3 @@
-using UnityEditorInternal;
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -44,8 +43,8 @@ namespace Prime31.Editor
 
 			if( buildTagsAndLayers )
 			{
-				File.WriteAllText( folderPath + TAGS_FILE_NAME, getClassContent( TAGS_FILE_NAME.Replace( ".cs", string.Empty ), InternalEditorUtility.tags ) );
-				File.WriteAllText( folderPath + LAYERS_FILE_NAME, getLayerClassContent( LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), InternalEditorUtility.layers ) );
+				File.WriteAllText( folderPath + TAGS_FILE_NAME, getClassContent( TAGS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.tags ) );
+				File.WriteAllText( folderPath + LAYERS_FILE_NAME, getLayerClassContent( LAYERS_FILE_NAME.Replace( ".cs", string.Empty ), UnityEditorInternal.InternalEditorUtility.layers ) );
 
 				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + TAGS_FILE_NAME, ImportAssetOptions.ForceUpdate );
 				AssetDatabase.ImportAsset( "Assets/" + FOLDER_LOCATION + LAYERS_FILE_NAME, ImportAssetOptions.ForceUpdate );
@@ -89,7 +88,7 @@ namespace Prime31.Editor
 
 		private static string[] getSortingLayers()
 		{
-			var type = typeof( InternalEditorUtility );
+			var type = typeof( UnityEditorInternal.InternalEditorUtility );
 			var prop = type.GetProperty( "sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic );
 
 			return prop.GetValue( null, null ) as string[];
@@ -98,7 +97,7 @@ namespace Prime31.Editor
 
 		private static int[] getSortingLayerIds( int totalSortingLayers )
 		{
-			var type = typeof( InternalEditorUtility );
+			var type = typeof( UnityEditorInternal.InternalEditorUtility );
 
 			// the behaviour is different here between Unity 4 and Unity 5.
 			// Unity 4 uses "user layers", while Unity 5 uses only unique sorting layer IDs
@@ -320,13 +319,13 @@ namespace Prime31.Editor
 			if ( char.IsLower(input[0]) )
 				input = char.ToUpper( input[0] ) + input.Substring( 1 );
 
-            // uppercase letters before dash or underline
+			// uppercase letters before dash or underline
 			Func<char,int,string> func = ( x, i ) =>{
-			    if ( x == '-' || x == '_' )
-			        return "";
+				if ( x == '-' || x == '_' )
+					return "";
 
 				if( i > 0 && (input[i - 1] == '-' || input[i - 1] == '_') )
-				    return x.ToString().ToUpper();
+					return x.ToString().ToUpper();
 
 				return x.ToString();
 			};
@@ -341,7 +340,7 @@ namespace Prime31.Editor
 		private static string toUpperCaseWithUnderscores( string input )
 		{
 			input = input.Replace( "-", "_" );
-		    input = Regex.Replace( input, @"\s+", "_" );
+			input = Regex.Replace( input, @"\s+", "_" );
 
 			// make camel-case have an underscore between letters
 			Func<char,int,string> func = ( x, i ) =>
