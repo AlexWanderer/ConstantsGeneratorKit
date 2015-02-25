@@ -19,7 +19,7 @@ namespace Prime31.Editor
 		private static ConstantNamingStyle CONSTANT_NAMING_STYLE = ConstantNamingStyle.UppercaseWithUnderscores;
 		private const string DIGIT_PREFIX = "k";
 		private static string[] IGNORE_RESOURCES_IN_SUBFOLDERS = new string[] { "ProCore", "2DToolkit" };
-		private const bool SHOW_SUCCESS_MESSAGE = true;
+		private static bool SHOW_SUCCESS_MESSAGE = true;
 
 		private const string TAGS_FILE_NAME = "Tags.cs";
 		private const string LAYERS_FILE_NAME = "Layers.cs";
@@ -199,6 +199,7 @@ namespace Prime31.Editor
 			}
 
 			var resourceNamesAdded = new List<string>();
+			var constantNamesAdded = new List<string>();
 			foreach( var res in resources )
 			{
 				if( resourceNamesAdded.Contains( res.name ) )
@@ -207,8 +208,17 @@ namespace Prime31.Editor
 					continue;
 				}
 
+				string constantName = formatConstVariableName(res.name);
+				if( constantNamesAdded.Contains( constantName ) )
+				{
+					Debug.LogWarning( "multiple resources with constant name " + constantName + " found. Skipping " + res.path );
+					continue;
+				}
+
+				
 				output += "\t\t" + buildConstVariable( res.name, "", res.path ) + "\n";
 				resourceNamesAdded.Add( res.name );
+				constantNamesAdded.Add( constantName );
 			}
 
 
