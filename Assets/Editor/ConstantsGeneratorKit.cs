@@ -1,3 +1,4 @@
+//#define DISABLE_AUTO_GENERATION
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -29,11 +30,13 @@ namespace Prime31.Editor
 
 		private static string TOTAL_SCENES_CONSTANT_NAME = CONSTANT_NAMING_STYLE == ConstantNamingStyle.UppercaseWithUnderscores ? "TOTAL_SCENES" : "TotalScenes";
 
+
 		[MenuItem( "Edit/Generate Constants Classes..." )]
 		static void rebuildConstantsClassesMenuItem()
 		{
 			rebuildConstantsClasses();
 		}
+
 
 		public static void rebuildConstantsClasses( bool buildResources = true, bool buildScenes = true, bool buildTagsAndLayers = true, bool buildSortingLayers = true )
 		{
@@ -215,7 +218,7 @@ namespace Prime31.Editor
 					continue;
 				}
 
-				
+
 				output += "\t\t" + buildConstVariable( res.name, "", res.path ) + "\n";
 				resourceNamesAdded.Add( res.name );
 				constantNamesAdded.Add( constantName );
@@ -374,6 +377,7 @@ namespace Prime31.Editor
 	}
 
 
+#if !DISABLE_AUTO_GENERATION
 	// this post processor listens for changes to the TagManager and automatically rebuilds all classes if it sees a change
 	public class ConstandsGeneratorPostProcessor : AssetPostprocessor
 	{
@@ -419,4 +423,5 @@ namespace Prime31.Editor
 			}
 		}
 	}
+#endif
 }
